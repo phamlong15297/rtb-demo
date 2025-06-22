@@ -24,7 +24,9 @@
 Assume `busy_factor` at peak is 10.  
 
 We have 
-$RPS = \frac{\text{Avg\_open} \cdot \text{DAU} + \text{created\_document\_num}}{\text{seconds\_per\_day}} \cdot \text{busy\_factor} = \frac{10 \cdot 1000 + 2000}{86400} \cdot 10 \approx 1.4$
+$$
+RPS = \left( \frac{\text{Avg\_open} \cdot \text{DAU} + \text{created\_document\_num}}{\text{seconds\_per\_day}} \right) \cdot \text{busy\_factor} = \left( \frac{10 \cdot 1000 + 2000}{86400} \right) \cdot 10 \approx 1.4
+$$
 
 => Expect 1.4 RPS
 
