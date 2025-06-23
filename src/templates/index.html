@@ -75,7 +75,7 @@
   <div id="result"></div>
 
   <script>
-    const BASE_URL = "http://localhost:80";
+    const BASE_URL = window.location.href.replace(/\/$/, "");
 
     document.getElementById('paste-form').addEventListener('submit', async function(e) {
       e.preventDefault();
