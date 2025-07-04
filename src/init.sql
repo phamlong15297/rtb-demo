@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS pastes (
     s3_path VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL,
     expires_at DATETIME NOT NULL,
+    burn_after_read BOOLEAN NOT NULL DEFAULT FALSE,
     size INT NOT NULL
 );
