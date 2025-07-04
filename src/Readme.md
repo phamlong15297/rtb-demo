@@ -3,7 +3,7 @@
 ## How to develop in local
 ```
 cd src
-docker compose up --build
+docker compose up --build -d
 ```
 ## How to deploy
 AWS services will be used:
