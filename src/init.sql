@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS pastes (
     created_at DATETIME NOT NULL,
     expires_at DATETIME NOT NULL,
     burn_after_read BOOLEAN NOT NULL DEFAULT FALSE,
+    password_hash VARCHAR(255) NULL,
     size INT NOT NULL
 );

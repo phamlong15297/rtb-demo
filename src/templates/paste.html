@@ -1,42 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Paste {{ shortlink }}</title>
-  <style>
-    body {
-      max-width: 480px;
-      margin: 2em auto;
-      font-family: system-ui, sans-serif;
-      background: #f5f5f8;
-      color: #333;
-    }
-    h1 {
-      font-size: 1.8em;
-      margin-bottom: 1em;
-      text-align: center;
-    }
-    #content-box {
-      background: #f7f7fa;
-      border-radius: 8px;
-      padding: 1em;
-      font-family: monospace;
-      white-space: pre-wrap;
-      min-height: 80px;
-      margin-bottom: 1em;
-      border: 1px solid #d5d5e0;
-      font-size: 1.07em;
-    }
-    #status {
-      color: #c33;
-      margin-bottom: 1em;
-      text-align: center;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Paste {{ shortlink }}</title>
+    <style>
+        body {
+            max-width: 480px;
+            margin: 2em auto;
+            font-family: system-ui, sans-serif;
+            background: #f5f5f8;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 1em;
+            text-align: center;
+        }
+
+        #content-box {
+            background: #f7f7fa;
+            border-radius: 8px;
+            padding: 1em;
+            font-family: monospace;
+            white-space: pre-wrap;
+            min-height: 80px;
+            margin-bottom: 1em;
+            border: 1px solid #d5d5e0;
+            font-size: 1.07em;
+        }
+
+        #status {
+            color: #c33;
+            margin-bottom: 1em;
+            text-align: center;
+        }
+    </style>
 </head>
+
 <body>
-  <h1>Paste {{ shortlink }}</h1>
-  <div id="status"></div>
-  <div id="content-box">{{ content }}</div>
+    <h1>Paste {{ shortlink }}</h1>
+    <div id="status"></div>
+    <div id="content-box">{{ content }}</div>
+
+    <script>
+        const cleanUrl = window.location.pathname + window.location.hash;
+        history.replaceState(null, '', cleanUrl);
+    </script>
 </body>
+
 </html>

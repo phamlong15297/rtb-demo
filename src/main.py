@@ -11,6 +11,7 @@ import redis.asyncio as aioredis
 import boto3
 from botocore.client import Config
 from fastapi.responses import FileResponse
+from passlib.hash import bcrypt
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -62,6 +63,12 @@ class PasteRequest(BaseModel):
     burn_after_read: bool = Field(
         False,
         description="Delete the paste immediately after the first successful read",
+    )
+    password: str | None = Field(
+        None,
+        min_length=1,
+        max_length=128,
+        description="Optional password to protect paste",
     )
 
 
@@ -119,6 +126,7 @@ async def create_paste(req: PasteRequest, request: Request) -> PasteResponse:
     now = datetime.datetime.utcnow()
     expires_at = now + datetime.timedelta(seconds=req.expires_in)
     s3_key = f"{shortlink}/{now.timestamp()}.txt"
+    password_hash = bcrypt.hash(req.password) if req.password else None
 
     # 2. Write content to S3
     s3.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=req.content.encode())
@@ -127,8 +135,8 @@ async def create_paste(req: PasteRequest, request: Request) -> PasteResponse:
         async with conn.cursor() as cur:
             await cur.execute(
                 """INSERT INTO pastes
-                       (shortlink, s3_path, created_at, expires_at, size, burn_after_read)
-                       VALUES (%s,%s,%s,%s,%s,%s)""",
+                       (shortlink, s3_path, created_at, expires_at, size, burn_after_read, password_hash)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s)""",
                 (
                     shortlink,
                     s3_key,
@@ -136,6 +144,7 @@ async def create_paste(req: PasteRequest, request: Request) -> PasteResponse:
                     expires_at,
                     len(req.content),
                     int(req.burn_after_read),
+                    password_hash,
                 ),
             )
     return PasteResponse(url=f"/{shortlink}")
@@ -147,7 +156,7 @@ async def read_paste(request: Request, shortlink: str) -> HTMLResponse:
     async with app.state.mysql.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
-                "SELECT s3_path, expires_at, burn_after_read FROM pastes WHERE shortlink=%s",
+                "SELECT s3_path, expires_at, burn_after_read, password_hash FROM pastes WHERE shortlink=%s",
                 (shortlink,),
             )
             row = await cur.fetchone()
@@ -157,9 +166,23 @@ async def read_paste(request: Request, shortlink: str) -> HTMLResponse:
 
             expires_at = row["expires_at"]
             burn_after_read = bool(row["burn_after_read"])
+            password_hash = row["password_hash"]
 
             if expires_at < datetime.datetime.utcnow():
                 raise HTTPException(status_code=410, detail="Paste expired")
+
+            if password_hash:
+                provided_pw = request.query_params.get("p")
+                if not provided_pw or not bcrypt.verify(provided_pw, password_hash):
+                    # Wrong or missing password → render prompt
+                    return templates.TemplateResponse(
+                        "password_prompt.html",
+                        {
+                            "request": request,
+                            "shortlink": shortlink,
+                            "error": bool(provided_pw),
+                        },
+                    )
 
             # Redis cache **only if not burn‑after‑read**
             if not burn_after_read:

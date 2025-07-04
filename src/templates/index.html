@@ -82,6 +82,8 @@
       <input type="checkbox" id="burn_after_read" name="burn_after_read">
       Burn after read
     </label>
+    <label for="password">Password (optional):</label>
+    <input type="password" id="password" maxlength="128" />
     <br>
     <button type="submit">Create Paste</button>
   </form>
@@ -95,6 +97,7 @@
       const content = document.getElementById('content').value.trim();
       const expires = parseInt(document.getElementById('expires').value, 10);
       const burn_after_read = document.getElementById('burn_after_read').checked;
+      const password = document.getElementById('password').value.trim() || null;
 
       // Verify form input
       if (!content) {
@@ -112,7 +115,8 @@
         body: JSON.stringify({
           content,
           expires_in: expires * 60,
-          burn_after_read: burn_after_read
+          burn_after_read: burn_after_read,
+          password: password
         })
       });
 
