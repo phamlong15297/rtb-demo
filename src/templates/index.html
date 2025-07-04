@@ -85,7 +85,7 @@
     <br>
     <button type="submit">Create Paste</button>
   </form>
-  <div id="result"></div>
+  <div id="result" hidden></div>
 
   <script>
     const BASE_URL = window.location.href.replace(/\/$/, "");
@@ -126,6 +126,7 @@
         try { msg = (await res.json()).detail; } catch { }
         resultDiv.textContent = msg;
       }
+      resultDiv.hidden = false;
     });
   </script>
 </body>
