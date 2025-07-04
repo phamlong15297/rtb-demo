@@ -3,12 +3,14 @@ import random
 import string
 import datetime
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 import aiomysql
 import redis.asyncio as aioredis
 import boto3
 from botocore.client import Config
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -43,6 +45,7 @@ except Exception:
     pass
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
 
 def random_shortlink(length: int = 7) -> str:
@@ -138,9 +141,9 @@ async def create_paste(req: PasteRequest, request: Request) -> PasteResponse:
     return PasteResponse(url=f"/{shortlink}")
 
 
-@app.get("/{shortlink}", response_model=PasteContentResponse)
-async def read_paste(shortlink: str) -> PasteContentResponse:
-    # Lookup 
+@app.get("/{shortlink}", response_class=HTMLResponse)
+async def read_paste(request: Request, shortlink: str) -> HTMLResponse:
+    # Lookup
     async with app.state.mysql.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
@@ -162,7 +165,10 @@ async def read_paste(shortlink: str) -> PasteContentResponse:
             if not burn_after_read:
                 cached = await app.state.redis.get(f"paste:{shortlink}")
                 if cached is not None:
-                    return PasteContentResponse(content=cached)
+                    return templates.TemplateResponse(
+                        "paste.html",
+                        {"request": request, "content": cached, "shortlink": shortlink},
+                    )
 
             # Fetch content from S3
             obj = s3.get_object(Bucket=S3_BUCKET, Key=row["s3_path"])
@@ -173,18 +179,25 @@ async def read_paste(shortlink: str) -> PasteContentResponse:
                 # Delete row on DB
                 async with app.state.mysql.acquire() as conn:
                     async with conn.cursor() as cur:
-                        await cur.execute("DELETE FROM pastes WHERE shortlink=%s", (shortlink,))
+                        await cur.execute(
+                            "DELETE FROM pastes WHERE shortlink=%s", (shortlink,)
+                        )
 
                 # Delete Redis cache and S3 object
                 await app.state.redis.delete(f"paste:{shortlink}")
                 s3.delete_object(Bucket=S3_BUCKET, Key=row["s3_path"])
-                return PasteContentResponse(content=content)
+                return templates.TemplateResponse(
+                    "paste.html",
+                    {"request": request, "content": content, "shortlink": shortlink},
+                )
 
     # Otherwise, cache and return
     ttl = int((expires_at - datetime.datetime.utcnow()).total_seconds())
     await app.state.redis.set(f"paste:{shortlink}", content, ex=ttl)
 
-    return PasteContentResponse(content=content)
+    return templates.TemplateResponse(
+        "paste.html", {"request": request, "content": content, "shortlink": shortlink}
+    )
 
 
 # -----------------------------#
