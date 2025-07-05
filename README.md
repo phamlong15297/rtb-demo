@@ -1,6 +1,6 @@
 # Pastebin MVP
 
-This demo is deployed at `3.217.244.189`
+This demo is deployed at `hw9-longpham-epam.space`
 
 ![alt text](document/screenshot.png)
 
