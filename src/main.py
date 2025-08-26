@@ -128,7 +128,7 @@ async def create_paste(req: PasteRequest, request: Request) -> PasteResponse:
     s3_key = f"{shortlink}/{now.timestamp()}.txt"
     password_hash = bcrypt.hash(req.password) if req.password else None
 
-    # 2. Write content to S3
+    # Write content to S3
     s3.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=req.content.encode())
     # Insert metadata into DB
     async with app.state.mysql.acquire() as conn:
